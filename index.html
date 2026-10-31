@@ -67,6 +67,14 @@
     </div>
   </main>
   <script>
+
+const loginToken = sessionStorage.getItem('refarmToken');
+const employeeName = sessionStorage.getItem('refarmEmployee');
+
+if (!loginToken || !employeeName) {
+  alert('ログイン情報がありません。ログインし直してください。');
+  window.location.replace('login-test.html');
+}
     
 const params = new URLSearchParams(window.location.search);
 const selectedType = params.get('type');
