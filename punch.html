@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+  <title>Re:+farm 勤怠管理</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f5f7f4;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 40px auto;
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 3px 12px #0001;
+    }
+
+    h1 {
+      color: #287b45;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    button {
+      padding: 25px 5px;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      background: #287b45;
+      color: white;
+    }
+
+    button:active {
+      opacity: 0.7;
+    }
+
+    .break {
+      background: #4679a8;
+    }
+
+    #message {
+      margin-top: 25px;
+      color: #333;
+      min-height: 24px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Re:+farm</h1>
+    <p class="subtitle">勤怠管理・打刻選択</p>
+
+    <div class="buttons">
+      <button onclick="selectPunch('出勤')">
+        出勤
+      </button>
+
+      <button onclick="selectPunch('退勤')">
+        退勤
+      </button>
+
+      <button class="break"
+              onclick="selectPunch('休憩開始')">
+        休憩開始
+      </button>
+
+      <button class="break"
+              onclick="selectPunch('休憩終了')">
+        休憩終了
+      </button>
+    </div>
+
+    <p id="message"></p>
+  </div>
+
+  <script>
+    function selectPunch(type) {
+      document.getElementById('message').textContent =
+        type + 'を選択しました。';
+    }
+  </script>
+</body>
+</html>
