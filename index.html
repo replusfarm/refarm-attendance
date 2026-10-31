@@ -74,10 +74,13 @@
         await scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: 230 },
-          async (decodedText) => {
-            status.textContent = 'QRコード読み取り成功！';
-            await stopCamera();
-          },
+          
+async (decodedText) => {
+  status.textContent = 'QRコード読み取り成功！\n' +
+    '読み取った文字数：' + decodedText.length;
+  await stopCamera();
+},
+
           () => {}
         );
         status.textContent = 'QRコードをカメラに映してください。';
