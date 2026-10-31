@@ -96,6 +96,8 @@ if (allowedTypes.includes(selectedType)) {
 
     let scanner = null;
 
+let scannedQrValue = null;
+
     async function startCamera() {
       const status = document.getElementById('status');
       if (scanner) return;
@@ -112,7 +114,9 @@ if (allowedTypes.includes(selectedType)) {
           { fps: 10, qrbox: 230 },
           
 
+
 async (decodedText) => {
+  scannedQrValue = decodedText;
   status.textContent = '職場QRコードを読み取りました。';
   await stopCamera();
 },
