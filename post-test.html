@@ -24,7 +24,11 @@
           headers: {
             'Content-Type': 'text/plain'
           },
-          body: 'ReFarm通信確認',
+          
+body: JSON.stringify({
+  testValue: 'ReFarm123'
+}),
+
           redirect: 'follow'
         });
 
