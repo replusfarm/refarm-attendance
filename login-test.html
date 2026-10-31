@@ -185,9 +185,13 @@ async function login() {
 
     const result = await response.json();
 
-    if (result.success && result.data?.success) {
-      message.textContent = 'ログイン成功';
-    } else {
+    
+if (result.success && result.data?.success) {
+  message.textContent = 'ログイン成功';
+
+  window.location.href = 'punch.html';
+}
+ else {
       message.textContent =
         result.message || 'ログインできませんでした。';
     }
