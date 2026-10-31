@@ -115,11 +115,17 @@ let scannedQrValue = null;
           
 
 
+
 async (decodedText) => {
+  if (scannedQrValue !== null) return;
+
   scannedQrValue = decodedText;
-  status.textContent = '職場QRコードを読み取りました。';
+  status.textContent = '職場QRコードを確認しています…';
+
   await stopCamera();
+  await sendAttendance();
 },
+
 
           () => {}
         );
