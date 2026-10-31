@@ -12,7 +12,8 @@
   <p id="result">まだ通信していません。</p>
 
   <script>
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz_qcSw8NPN26h1QLHSW1Yu_CTl0eQgBvC0ikQH94brQ7B7sPa5ABQobzBNI4ITxY86eA/exec';
+    
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzrhMtfCLkAUlRaYLUBBvfbH9GN3sxyWpW-P0NXM1Na32w6bVFEKRh1gKdZE3Ig5mYjhQ/exec';
 
     document.getElementById('sendButton').addEventListener('click', async () => {
       const result = document.getElementById('result');
@@ -25,9 +26,13 @@
             'Content-Type': 'text/plain'
           },
           
+
 body: JSON.stringify({
-  testValue: 'ReFarm123'
+  action: 'login',
+  name: '存在しないテスト従業員',
+  personalId: '000000'
 }),
+
 
           redirect: 'follow'
         });
