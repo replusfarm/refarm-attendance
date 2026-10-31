@@ -77,13 +77,7 @@
           
 
 async (decodedText) => {
-  const expectedQR =
-    'https://script.google.com/macros/s/AKfycbzrhMtfCLkAUlRaYLUBBvfbH9GN3sxyWpW-P0NXM1Na32w6bVFEKRh1gKdZE3Ig5mYjhQ/exec';
-
-  status.textContent = decodedText === expectedQR
-    ? 'QRコード完全一致！'
-    : 'QRコードが一致しません。';
-
+  status.textContent = '職場QRコードを読み取りました。';
   await stopCamera();
 },
 
