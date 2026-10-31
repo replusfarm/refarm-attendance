@@ -130,6 +130,63 @@ async (decodedText) => {
       }
     }
 
+async function sendAttendance() {
+  const status = document.getElementById('status');
+
+  if (!allowedTypes.includes(selectedType)) {
+    status.textContent = '打刻の種類が正しくありません。';
+    return;
+  }
+
+  if (!scannedQrValue) {
+    status.textContent = '先に職場QRコードを読み取ってください。';
+    return;
+  }
+
+  const token = sessionStorage.getItem('refarmToken');
+  const name = sessionStorage.getItem('refarmEmployee');
+
+  if (!token || !name) {
+    status.textContent = 'ログインし直してください。';
+    return;
+  }
+
+  status.textContent = '勤怠記録を送信しています…';
+
+  try {
+    const response = await fetch(
+      'https://script.google.com/macros/s/AKfycbzrhMtfCLkAUlRaYLUBBvfbH9GN3sxyWpW-P0NXM1Na32w6bVFEKRh1gKdZE3Ig5mYjhQ/exec',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        body: JSON.stringify({
+          action: 'punch',
+          name: name,
+          personalId: token,
+          type: selectedType,
+          qrValue: scannedQrValue
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+      status.textContent = result.message || '打刻に失敗しました。';
+      return;
+    }
+
+    status.textContent = '打刻を記録しました：' + selectedType;
+    scannedQrValue = null;
+
+  } catch (error) {
+    status.textContent =
+      '通信エラーが発生しました。記録状況を確認してください。';
+  }
+}
+
     async function stopCamera() {
       if (!scanner) return;
       const current = scanner;
