@@ -6,6 +6,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Re:+farm 勤怠管理</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  
+/* QRコードカメラのスマホ表示調整 */
+#reader {
+  width: 100%;
+  max-width: 360px;
+  margin: 16px auto;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#reader video {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
+}
+
+#reader canvas {
+  max-width: 100% !important;
+}
+
+#reader img {
+  max-width: 100% !important;
+}
+
+@media (max-width: 480px) {
+  #reader {
+    max-width: 300px;
+  }
+}
+
   <style>
     body {
       font-family: sans-serif;
