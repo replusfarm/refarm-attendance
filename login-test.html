@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>Re:+farm 勤怠管理</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f1f6f2;
+      color: #20533d;
+    }
+
+    header {
+      background: #20533d;
+      color: white;
+      text-align: center;
+      padding: 25px 15px;
+    }
+
+    main {
+      max-width: 420px;
+      margin: 30px auto;
+      padding: 15px;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 3px 12px #00000012;
+    }
+
+    h2 { margin: 0; }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 20px 0 8px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 15px;
+      font-size: 18px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+
+    button {
+      width: 100%;
+      padding: 17px;
+      margin-top: 25px;
+      background: #20533d;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+
+    #message {
+      text-align: center;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h2>Re:+farm</h2>
+    <p>勤怠管理システム</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <h3>ログイン</h3>
+
+      <label for="staff">名前を選択</label>
+      <select id="staff">
+        <option value="">選択してください</option>
+        <option value="従業員1">従業員1</option>
+        <option value="従業員2">従業員2</option>
+        <option value="従業員3">従業員3</option>
+        <option value="パート">パート</option>
+      </select>
+
+      <label for="personalId">PersonalID</label>
+      <input
+        id="personalId"
+        type="password"
+        inputmode="numeric"
+        maxlength="6"
+        autocomplete="off"
+        placeholder="6桁のPersonalID"
+      >
+
+      <button onclick="login()">ログイン</button>
+
+      <p id="message"></p>
+    </div>
+  </main>
+
+  <script>
+    function login() {
+      const name =
+        document.getElementById('staff').value;
+
+      const id =
+        document.getElementById('personalId').value;
+
+      const message =
+        document.getElementById('message');
+
+      if (!name) {
+        message.textContent =
+          '名前を選択してください。';
+        return;
+      }
+
+      if (!/^[0-9]{6}$/.test(id)) {
+        message.textContent =
+          'PersonalIDは6桁で入力してください。';
+        return;
+      }
+
+      message.textContent =
+        '入力形式OK（認証接続前のテスト画面です）';
+    }
+  </script>
+</body>
+</html>
