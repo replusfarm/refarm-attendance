@@ -109,31 +109,60 @@
   </main>
 
   <script>
-    function login() {
-      const name =
-        document.getElementById('staff').value;
+    
+async function login() {
+  const name = document.getElementById('staff').value;
+  const id = document.getElementById('personalId').value;
+  const message = document.getElementById('message');
 
-      const id =
-        document.getElementById('personalId').value;
+  if (!name) {
+    message.textContent = '名前を選択してください。';
+    return;
+  }
 
-      const message =
-        document.getElementById('message');
+  if (!/^[0-9]{6}$/.test(id)) {
+    message.textContent = 'PersonalIDは6桁で入力してください。';
+    return;
+  }
 
-      if (!name) {
-        message.textContent =
-          '名前を選択してください。';
-        return;
-      }
+  const GAS_URL =
+    'https://script.google.com/macros/s/AKfycbzrhMtfCLkAUlRaYLUBBvfbH9GN3sxyWpW-P0NXM1Na32w6bVFEKRh1gKdZE3Ig5mYjhQ/exec';
 
-      if (!/^[0-9]{6}$/.test(id)) {
-        message.textContent =
-          'PersonalIDは6桁で入力してください。';
-        return;
-      }
+  message.textContent = '認証中...';
 
-      message.textContent =
-        '入力形式OK（認証接続前のテスト画面です）';
+  try {
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain'
+      },
+      body: JSON.stringify({
+        action: 'login',
+        name: name,
+        personalId: id
+      }),
+      redirect: 'follow'
+    });
+
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status);
     }
+
+    const result = await response.json();
+
+    if (result.success && result.data?.success) {
+      message.textContent = 'ログイン成功';
+    } else {
+      message.textContent =
+        result.message || 'ログインできませんでした。';
+    }
+
+  } catch (error) {
+    message.textContent =
+      '通信エラーが発生しました。';
+    console.error(error);
+  }
+}
   </script>
 </body>
 </html>
