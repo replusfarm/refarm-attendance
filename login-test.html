@@ -81,13 +81,11 @@
       <h3>ログイン</h3>
 
       <label for="staff">名前を選択</label>
-      <select id="staff">
-        <option value="">選択してください</option>
-        <option value="阿部辰也">阿部辰也</option>
-        <option value="従業員2">従業員2</option>
-        <option value="従業員3">従業員3</option>
-        <option value="パート">パート</option>
-      </select>
+     
+<select id="staff">
+  <option value="">読み込み中...</option>
+</select>
+
 
       <label for="personalId">PersonalID</label>
       
@@ -107,6 +105,43 @@
       <p id="message"></p>
     </div>
   </main>
+
+async function loadEmployees() {
+  const staff = document.getElementById('staff');
+
+  const GAS_URL =
+    'https://script.google.com/macros/s/AKfycbzrhMtfCLkAUlRaYLUBBvfbH9GN3sxyWpW-P0NXM1Na32w6bVFEKRh1gKdZE3Ig5mYjhQ/exec?action=employees';
+
+  try {
+    const response = await fetch(GAS_URL);
+
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status);
+    }
+
+    const result = await response.json();
+
+    if (!result.success || !Array.isArray(result.employees)) {
+      throw new Error('従業員データが不正です。');
+    }
+
+    staff.replaceChildren();
+
+    const placeholder = new Option('選択してください', '');
+    staff.add(placeholder);
+
+    result.employees.forEach(name => {
+      staff.add(new Option(name, name));
+    });
+
+  } catch (error) {
+    staff.replaceChildren();
+    staff.add(new Option('従業員名を取得できません', ''));
+    console.error(error);
+  }
+}
+
+loadEmployees();
 
   <script>
     
