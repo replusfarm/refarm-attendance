@@ -6,36 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Re:+farm 勤怠管理</title>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-  
-/* QRコードカメラのスマホ表示調整 */
-#reader {
-  width: 100%;
-  max-width: 360px;
-  margin: 16px auto;
-  overflow: hidden;
-  box-sizing: border-box;
-}
-
-#reader video {
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
-  object-fit: contain;
-}
-
-#reader canvas {
-  max-width: 100% !important;
-}
-
-#reader img {
-  max-width: 100% !important;
-}
-
-@media (max-width: 480px) {
-  #reader {
-    max-width: 300px;
-  }
-}
 
   <style>
     body {
@@ -44,22 +14,26 @@
       margin: 0;
       color: #20533d;
     }
+
     header {
       background: #20533d;
       color: white;
       padding: 20px;
       text-align: center;
     }
+
     main {
       max-width: 500px;
       margin: 20px auto;
       padding: 15px;
     }
+
     .card {
       background: white;
       padding: 20px;
       border-radius: 15px;
     }
+
     button {
       background: #20533d;
       color: white;
@@ -70,8 +44,41 @@
       width: 100%;
       margin-top: 12px;
     }
-    #reader { width: 100%; }
-    #status { margin-top: 15px; white-space: pre-wrap; }
+
+    /* QRコードカメラのスマホ表示調整 */
+    #reader {
+      width: 100%;
+      max-width: 360px;
+      margin: 16px auto;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    #reader video {
+      width: 100% !important;
+      max-width: 100% !important;
+      height: auto !important;
+      object-fit: contain;
+    }
+
+    #reader canvas {
+      max-width: 100% !important;
+    }
+
+    #reader img {
+      max-width: 100% !important;
+    }
+
+    @media (max-width: 480px) {
+      #reader {
+        max-width: 300px;
+      }
+    }
+
+    #status {
+      margin-top: 15px;
+      white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
