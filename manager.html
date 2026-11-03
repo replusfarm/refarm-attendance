@@ -359,7 +359,11 @@ function showAttendanceEditForm(record, item) {
   const previewButton = document.createElement('button');
   previewButton.type = 'button';
   previewButton.textContent = '修正内容を確認';
-
+const commitButton = document.createElement('button');
+commitButton.type = 'button';
+commitButton.textContent = 'この内容で修正を確定';
+commitButton.disabled = true;
+commitButton.style.background = '#b45309';
   const cancelButton = document.createElement('button');
   cancelButton.type = 'button';
   cancelButton.className = 'secondary';
