@@ -376,7 +376,17 @@ commitButton.style.background = '#b45309';
   cancelButton.addEventListener('click', () => {
     form.remove();
   });
+let confirmedPreview = null;
 
+timeInput.addEventListener('input', () => {
+  confirmedPreview = null;
+  commitButton.disabled = true;
+});
+
+reasonInput.addEventListener('input', () => {
+  confirmedPreview = null;
+  commitButton.disabled = true;
+});
   previewButton.addEventListener('click', async () => {
     const newTime = timeInput.value;
     const reason = reasonInput.value.trim();
