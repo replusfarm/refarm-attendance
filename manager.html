@@ -376,6 +376,93 @@ commitButton.style.background = '#b45309';
   cancelButton.addEventListener('click', () => {
     form.remove();
   });
+  
+commitButton.addEventListener('click', async () => {
+  if (!confirmedPreview || commitButton.disabled) {
+    return;
+  }
+
+  const preview = confirmedPreview;
+
+  const currentTime = /^\d{2}:\d{2}$/.test(timeInput.value)
+    ? timeInput.value + ':00'
+    : timeInput.value;
+
+  if (
+    currentTime !== preview.newTime ||
+    reasonInput.value.trim() !== preview.reason
+  ) {
+    confirmedPreview = null;
+    commitButton.disabled = true;
+    message.textContent =
+      '入力内容が変更されました。もう一度確認してください。';
+    return;
+  }
+
+  const confirmed = window.confirm(
+    '以下の勤怠を実際に修正します。\n\n' +
+    '修正前：' + preview.expectedOldTime + '\n' +
+    '修正後：' + preview.newTime + '\n' +
+    '理由：' + preview.reason + '\n\n' +
+    '修正を確定しますか？'
+  );
+
+  if (!confirmed) return;
+
+  commitButton.disabled = true;
+  previewButton.disabled = true;
+  timeInput.disabled = true;
+  reasonInput.disabled = true;
+  cancelButton.disabled = true;
+
+  message.textContent = '勤怠を修正中...';
+
+  try {
+    const managerToken =
+      sessionStorage.getItem('refarmManagerToken');
+
+    if (!managerToken) {
+      throw new Error('Manager認証が必要です。');
+    }
+
+    const result = await callApi(
+      'managerAttendanceEditCommit',
+      {
+        loginToken,
+        managerToken,
+        recordId: preview.recordId,
+        expectedOldTime: preview.expectedOldTime,
+        newTime: preview.newTime,
+        reason: preview.reason
+      }
+    );
+
+    if (!result || result.success !== true) {
+      throw new Error('修正結果を確認できませんでした。');
+    }
+
+    confirmedPreview = null;
+    message.textContent =
+      '勤怠修正が完了しました。\n' +
+      '給与の再計算が必要です。';
+
+    await loadAttendanceHistory();
+
+  } catch (error) {
+    confirmedPreview = null;
+    commitButton.disabled = true;
+    message.textContent =
+      '修正を確定できませんでした：' +
+      (error.message || '不明なエラー');
+
+  } finally {
+    previewButton.disabled = false;
+    timeInput.disabled = false;
+    reasonInput.disabled = false;
+    cancelButton.disabled = false;
+  }
+});
+
 let confirmedPreview = null;
 
 timeInput.addEventListener('input', () => {
