@@ -91,7 +91,14 @@
         休憩終了
       </button>
     </div>
-
+<div id="managerMenu" style="display:none; margin-top:24px;">
+  <button
+    type="button"
+    onclick="window.location.href='manager.html'"
+    style="width:100%; background:#20533d;">
+    Manager（管理者メニュー）
+  </button>
+</div>
     <p id="message"></p>
   </div>
 
@@ -159,6 +166,39 @@ async function selectPunch(type) {
     window.breakPunchSending = false;
   }
 }
+
+async function loadManagerRole() {
+  const token = sessionStorage.getItem('refarmToken');
+  if (!token) return;
+
+  try {
+    const response = await fetch(
+      'https://script.google.com/macros/s/AKfycbzrhMtfCLkAUlRaYLUBBvfbH9GN3sxyWpW-P0NXM1Na32w6bVFEKRh1gKdZE3Ig5mYjhQ/exec',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({
+          action: 'managerRole',
+          loginToken: token
+        })
+      }
+    );
+
+    const result = await response.json();
+
+    if (
+      result.success &&
+      result.data &&
+      result.data.role === 'Manager'
+    ) {
+      document.getElementById('managerMenu').style.display = 'block';
+    }
+  } catch (error) {
+    console.error('Manager権限を確認できませんでした', error);
+  }
+}
+
+loadManagerRole();
 
   </script>
 </body>
