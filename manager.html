@@ -448,8 +448,6 @@ await loadAttendanceHistory();
 document.getElementById('attendanceMessage').textContent =
   '勤怠修正が完了しました。給与の再計算が必要です。';
 
-    await loadAttendanceHistory();
-
   } catch (error) {
     confirmedPreview = null;
     commitButton.disabled = true;
@@ -551,7 +549,6 @@ commitButton.disabled = false;
   timeInput.disabled = false;
   reasonInput.disabled = false;
 }
-    }
   });
 
   
