@@ -298,8 +298,22 @@ async function loadAttendanceHistory() {
       const time = document.createElement('span');
       time.textContent = '　' + record.time;
 
+      
       item.append(type, time);
+
+      const editButton = document.createElement('button');
+      editButton.type = 'button';
+      editButton.className = 'secondary';
+      editButton.textContent = 'この打刻を修正';
+      editButton.style.marginTop = '8px';
+
+      editButton.addEventListener('click', () => {
+        showAttendanceEditForm(record, item);
+      });
+
+      item.appendChild(editButton);
       results.appendChild(item);
+
     });
 
   } catch (error) {
@@ -308,6 +322,132 @@ async function loadAttendanceHistory() {
   } finally {
     button.disabled = false;
   }
+}
+
+function showAttendanceEditForm(record, item) {
+  // 同時に複数の修正フォームを開かない
+  document.querySelectorAll('.attendance-edit-form')
+    .forEach(element => element.remove());
+
+  const form = document.createElement('div');
+  form.className = 'attendance-edit-form';
+  form.style.marginTop = '12px';
+  form.style.padding = '12px';
+  form.style.background = '#f1f6f2';
+  form.style.borderRadius = '10px';
+
+  const heading = document.createElement('p');
+  heading.textContent =
+    record.type + '：' + record.time + ' を修正';
+
+  const timeLabel = document.createElement('label');
+  timeLabel.textContent = '修正後の時刻（時:分:秒）';
+
+  const timeInput = document.createElement('input');
+  timeInput.type = 'time';
+  timeInput.step = '1';
+  timeInput.value = record.time;
+
+  const reasonLabel = document.createElement('label');
+  reasonLabel.textContent = '修正理由（必須）';
+
+  const reasonInput = document.createElement('input');
+  reasonInput.type = 'text';
+  reasonInput.maxLength = 500;
+  reasonInput.placeholder = '例：打刻時刻の間違い';
+
+  const previewButton = document.createElement('button');
+  previewButton.type = 'button';
+  previewButton.textContent = '修正内容を確認';
+
+  const cancelButton = document.createElement('button');
+  cancelButton.type = 'button';
+  cancelButton.className = 'secondary';
+  cancelButton.textContent = 'キャンセル';
+
+  const message = document.createElement('p');
+  message.style.whiteSpace = 'pre-wrap';
+  message.setAttribute('role', 'status');
+
+  cancelButton.addEventListener('click', () => {
+    form.remove();
+  });
+
+  previewButton.addEventListener('click', async () => {
+    const newTime = timeInput.value;
+    const reason = reasonInput.value.trim();
+
+    if (!newTime || !reason) {
+      message.textContent =
+        '修正後の時刻と理由を入力してください。';
+      return;
+    }
+
+    // ブラウザによって秒が省略される場合に対応
+    const normalizedTime =
+      /^\d{2}:\d{2}$/.test(newTime)
+        ? newTime + ':00'
+        : newTime;
+
+    const managerToken =
+      sessionStorage.getItem('refarmManagerToken');
+
+    if (!managerToken) {
+      message.textContent = 'Manager認証が必要です。';
+      return;
+    }
+
+    previewButton.disabled = true;
+    message.textContent = '修正内容を確認中...';
+
+    try {
+      const result = await callApi(
+        'managerAttendanceEditPreview',
+        {
+          loginToken,
+          managerToken,
+          recordId: record.id,
+          newTime: normalizedTime,
+          reason
+        }
+      );
+
+      if (!result || result.valid !== true ||
+          result.previewOnly !== true) {
+        throw new Error('確認結果が正しくありません。');
+      }
+
+      message.textContent =
+        '【修正内容の確認成功】\n' +
+        '従業員：' + result.employee + '\n' +
+        '対象日：' + result.date + '\n' +
+        '打刻区分：' + result.type + '\n' +
+        '修正前：' + result.oldTime + '\n' +
+        '修正後：' + result.newTime + '\n' +
+        '修正理由：' + result.reason + '\n\n' +
+        '※確認のみです。実データは変更していません。';
+
+    } catch (error) {
+      message.textContent =
+        '確認できませんでした：' +
+        (error.message || '不明なエラー');
+    } finally {
+      previewButton.disabled = false;
+    }
+  });
+
+  form.append(
+    heading,
+    timeLabel,
+    timeInput,
+    reasonLabel,
+    reasonInput,
+    previewButton,
+    cancelButton,
+    message
+  );
+
+  item.appendChild(form);
 }
 
   </script>
