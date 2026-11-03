@@ -441,10 +441,12 @@ commitButton.addEventListener('click', async () => {
       throw new Error('修正結果を確認できませんでした。');
     }
 
-    confirmedPreview = null;
-    message.textContent =
-      '勤怠修正が完了しました。\n' +
-      '給与の再計算が必要です。';
+  confirmedPreview = null;
+
+await loadAttendanceHistory();
+
+document.getElementById('attendanceMessage').textContent =
+  '勤怠修正が完了しました。給与の再計算が必要です。';
 
     await loadAttendanceHistory();
 
