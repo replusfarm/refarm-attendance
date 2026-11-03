@@ -24,7 +24,26 @@
   <button id="loginButton" type="button" onclick="login()">
     検証用ログイン
   </button>
+<section id="passRegisterPanel" hidden>
+  <h3>給与明細PASSの初回登録</h3>
+  <p>検証用ログイン後、本人のPASSを登録します。</p>
 
+  <input
+    id="newPayslipPassword"
+    type="password"
+    minlength="6"
+    maxlength="128"
+    autocomplete="new-password"
+    placeholder="新しい給与明細PASS（6文字以上）"
+  >
+
+  <button id="registerPassButton" type="button"
+          onclick="registerPayslipPassword()">
+    給与明細PASSを初回登録
+  </button>
+
+  <p id="passRegisterMessage" role="status"></p>
+</section>
   <p id="message" role="status"></p>
 
   <script>
@@ -100,8 +119,67 @@
         sessionStorage.setItem('refarmToken', result.data.token);
         sessionStorage.setItem('refarmEmployee', result.data.name);
 
-        // 同じタブでManager権限確認画面に移動
-        window.location.href = 'manager-test.html';
+        // 検証用ログイン成功後、PASS登録欄を表示
+document.getElementById('passRegisterPanel').hidden = false;
+document.getElementById('pin').value = '';
+message.textContent =
+  '本人確認ができました。初回登録する場合は給与明細PASSを入力してください。';
+      } catch (error) {
+        message.textContent = 'エラー：' + error.message;
+        button.disabled = false;
+      }
+    }
+
+     async function registerPayslipPassword() {
+      const message = document.getElementById('passRegisterMessage');
+      const button = document.getElementById('registerPassButton');
+      const input = document.getElementById('newPayslipPassword');
+      const password = input.value;
+      const token = sessionStorage.getItem('refarmToken');
+
+      if (!token) {
+        message.textContent = '先に検証用ログインをしてください。';
+        return;
+      }
+
+      if (password.length < 6 || password.length > 128) {
+        message.textContent = 'PASSは6〜128文字で入力してください。';
+        return;
+      }
+
+      if (!confirm('このPASSを初回登録しますか？')) {
+        return;
+      }
+
+      button.disabled = true;
+      message.textContent = '登録中...';
+
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify({
+            action: 'payslipRegisterPassword',
+            loginToken: token,
+            password: password
+          })
+        });
+
+        const result = await response.json();
+
+        if (!result.success || !result.data ||
+            result.data.success !== true) {
+          throw new Error(
+            result.message || 'PASS登録に失敗しました'
+          );
+        }
+
+        input.value = '';
+        message.textContent = '給与明細PASSの登録が完了しました。';
+        button.disabled = true;
+
       } catch (error) {
         message.textContent = 'エラー：' + error.message;
         button.disabled = false;
