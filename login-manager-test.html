@@ -41,10 +41,9 @@
           throw new Error(result.message || '従業員一覧の取得に失敗しました');
         }
 
-        const employees = Array.isArray(result.data)
-          ? result.data
-          : (result.data && Array.isArray(result.data.employees)
-              ? result.data.employees : []);
+        const employees = Array.isArray(result.employees)
+  ? result.employees
+  : [];
 
         select.innerHTML = '<option value="">名前を選択</option>';
 
