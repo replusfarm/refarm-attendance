@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Re:+farm Manager</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f1f6f2;
+      color: #20533d;
+    }
+    header {
+      background: #20533d;
+      color: white;
+      text-align: center;
+      padding: 22px;
+    }
+    main {
+      max-width: 480px;
+      margin: 24px auto;
+      padding: 0 15px;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      margin-bottom: 16px;
+    }
+    input, button {
+      width: 100%;
+      padding: 15px;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    input { border: 1px solid #bbb; }
+    button {
+      border: none;
+      background: #20533d;
+      color: white;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+    .secondary {
+      background: #e5eee7;
+      color: #20533d;
+    }
+    #message {
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+    #managerPanel { display: none; }
+    .note { color: #666; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>Re:+farm Manager</h2>
+    <p>管理者専用画面</p>
+  </header>
+
+  <main>
+    <section class="card" id="loginPanel">
+      <h3>Manager認証</h3>
+      <p>給与明細閲覧PASSを入力してください。</p>
+
+      <input
+        id="managerPassword"
+        type="password"
+        autocomplete="off"
+        placeholder="給与明細閲覧PASS"
+      >
+
+      <button id="loginButton" onclick="managerLogin()">
+        Managerログイン
+      </button>
+
+      <p id="message"></p>
+    </section>
+
+    <section class="card" id="managerPanel">
+      <h3>管理メニュー</h3>
+      <p id="welcome"></p>
+
+      <button disabled>勤怠履歴・修正（準備中）</button>
+      <button disabled>給与計算・再計算（準備中）</button>
+      <button disabled>手当・控除管理（準備中）</button>
+      <button disabled>給与明細の確定・公開（準備中）</button>
+
+      <p class="note">
+        各機能はサーバー側の管理者認証を接続後に利用できます。
+      </p>
+
+      <button class="secondary" onclick="logoutManager()">
+        Managerログアウト
+      </button>
+    </section>
+
+    <button class="secondary" onclick="location.href='punch.html'">
+      打刻画面に戻る
+    </button>
+  </main>
+
+  <script>
+    const GAS_URL =
+      'https://script.google.com/macros/s/AKfycbzrhMtfCLkAUlRaYLUBBvfbH9GN3sxyWpW-P0NXM1Na32w6bVFEKRh1gKdZE3Ig5mYjhQ/exec';
+
+    const loginToken = sessionStorage.getItem('refarmToken');
+    const employeeName = sessionStorage.getItem('refarmEmployee');
+
+    if (!loginToken || !employeeName) {
+      location.replace('login-test.html');
+    }
+
+    async function callApi(action, data) {
+      const response = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action, ...data })
+      });
+
+      if (!response.ok) {
+        throw new Error('通信エラー：' + response.status);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.message || '処理に失敗しました');
+      }
+
+      return result.data;
+    }
+
+    async function managerLogin() {
+      const password =
+        document.getElementById('managerPassword').value;
+      const message = document.getElementById('message');
+      const button = document.getElementById('loginButton');
+
+      if (!password) {
+        message.textContent = 'PASSを入力してください。';
+        return;
+      }
+
+      button.disabled = true;
+      message.textContent = '認証中...';
+
+      try {
+        const result = await callApi('managerLogin', {
+          loginToken: loginToken,
+          payslipPassword: password
+        });
+
+        if (!result.success || !result.managerToken) {
+          throw new Error('Manager認証に失敗しました');
+        }
+
+        sessionStorage.setItem(
+          'refarmManagerToken',
+          result.managerToken
+        );
+
+        document.getElementById('managerPassword').value = '';
+        document.getElementById('loginPanel').style.display = 'none';
+        document.getElementById('managerPanel').style.display = 'block';
+        document.getElementById('welcome').textContent =
+          employeeName + ' さん';
+
+      } catch (error) {
+        message.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function logoutManager() {
+      sessionStorage.removeItem('refarmManagerToken');
+      document.getElementById('managerPanel').style.display = 'none';
+      document.getElementById('loginPanel').style.display = 'block';
+      document.getElementById('message').textContent =
+        'Manager画面からログアウトしました。';
+    }
+  </script>
+</body>
+</html>
