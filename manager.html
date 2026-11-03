@@ -498,8 +498,13 @@ reasonInput.addEventListener('input', () => {
       return;
     }
 
-    previewButton.disabled = true;
-    message.textContent = '修正内容を確認中...';
+    confirmedPreview = null;
+commitButton.disabled = true;
+previewButton.disabled = true;
+timeInput.disabled = true;
+reasonInput.disabled = true;
+
+message.textContent = '修正内容を確認中...';
 
     try {
       const result = await callApi(
@@ -540,7 +545,10 @@ commitButton.disabled = false;
         '確認できませんでした：' +
         (error.message || '不明なエラー');
     } finally {
-      previewButton.disabled = false;
+  previewButton.disabled = false;
+  timeInput.disabled = false;
+  reasonInput.disabled = false;
+}
     }
   });
 
