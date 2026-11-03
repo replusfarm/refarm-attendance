@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Re:+farm Manager検証ログイン</title>
+</head>
+<body>
+  <h2>Manager検証用ログイン</h2>
+  <p>通常の打刻には使用しないでください。</p>
+
+  <label for="name">従業員名</label>
+  <select id="name">
+    <option value="">読み込み中...</option>
+  </select>
+
+  <p>
+    <label for="pin">PersonalID（6桁）</label>
+    <input id="pin" type="password" inputmode="numeric"
+           maxlength="6" autocomplete="off">
+  </p>
+
+  <button id="loginButton" type="button" onclick="login()">
+    検証用ログイン
+  </button>
+
+  <p id="message" role="status"></p>
+
+  <script>
+    const GAS_URL =
+      'https://script.google.com/macros/s/AKfycbwTM24N8r9IoX3R680dc9sLqTuCDBRzkuYunID2MKWbqbw8LBx4pGvmwoYUBAmDT4qQRA/exec';
+
+    async function loadEmployees() {
+      const select = document.getElementById('name');
+      try {
+        const response = await fetch(GAS_URL + '?action=employees');
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.message || '従業員一覧の取得に失敗しました');
+        }
+
+        const employees = Array.isArray(result.data)
+          ? result.data
+          : (result.data && Array.isArray(result.data.employees)
+              ? result.data.employees : []);
+
+        select.innerHTML = '<option value="">名前を選択</option>';
+
+        employees.forEach(item => {
+          const name = typeof item === 'string' ? item : item.name;
+          if (!name) return;
+          const option = document.createElement('option');
+          option.value = name;
+          option.textContent = name;
+          select.appendChild(option);
+        });
+
+        if (!employees.length) {
+          throw new Error('従業員一覧が空です');
+        }
+      } catch (error) {
+        document.getElementById('message').textContent =
+          '従業員一覧エラー：' + error.message;
+      }
+    }
+
+    async function login() {
+      const name = document.getElementById('name').value;
+      const personalId = document.getElementById('pin').value;
+      const message = document.getElementById('message');
+      const button = document.getElementById('loginButton');
+
+      if (!name || !/^[0-9]{6}$/.test(personalId)) {
+        message.textContent = '名前と6桁のPersonalIDを入力してください。';
+        return;
+      }
+
+      button.disabled = true;
+      message.textContent = '認証中...';
+
+      try {
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'login',
+            name: name,
+            personalId: personalId
+          })
+        });
+
+        const result = await response.json();
+
+        if (!result.success || !result.data ||
+            result.data.success !== true || !result.data.token) {
+          throw new Error(result.message || 'ログインに失敗しました');
+        }
+
+        sessionStorage.setItem('refarmToken', result.data.token);
+        sessionStorage.setItem('refarmEmployee', result.data.name);
+
+        // 同じタブでManager権限確認画面に移動
+        window.location.href = 'manager-test.html';
+      } catch (error) {
+        message.textContent = 'エラー：' + error.message;
+        button.disabled = false;
+      }
+    }
+
+    loadEmployees();
+  </script>
+</body>
+</html>
