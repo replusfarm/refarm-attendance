@@ -89,7 +89,11 @@
       <h3>管理メニュー</h3>
       <p id="welcome"></p>
 
-      <button disabled>勤怠履歴・修正（準備中）</button>
+     
+<button onclick="showAttendancePanel()">
+  勤怠履歴を見る
+</button>
+
       <button disabled>給与計算・再計算（準備中）</button>
       <button disabled>手当・控除管理（準備中）</button>
       <button disabled>給与明細の確定・公開（準備中）</button>
@@ -102,6 +106,31 @@
         Managerログアウト
       </button>
     </section>
+
+<section class="card" id="attendancePanel" style="display:none;">
+  <h3>勤怠履歴</h3>
+
+  <label for="attendanceEmployee">従業員名</label>
+  <input
+    id="attendanceEmployee"
+    type="text"
+    placeholder="従業員名を入力"
+  >
+
+  <label for="attendanceDate">対象日</label>
+  <input id="attendanceDate" type="date">
+
+  <button id="historyButton" onclick="loadAttendanceHistory()">
+    履歴を表示
+  </button>
+
+  <p id="attendanceMessage" role="status"></p>
+  <div id="attendanceResults"></div>
+
+  <button class="secondary" onclick="hideAttendancePanel()">
+    管理メニューに戻る
+  </button>
+</section>
 
     <button class="secondary" onclick="location.href='punch.html'">
       打刻画面に戻る
@@ -187,6 +216,100 @@
       document.getElementById('message').textContent =
         'Manager画面からログアウトしました。';
     }
+ 
+function showAttendancePanel() {
+  document.getElementById('managerPanel').style.display = 'none';
+  document.getElementById('attendancePanel').style.display = 'block';
+
+  document.getElementById('attendanceEmployee').value =
+    employeeName;
+
+  document.getElementById('attendanceDate').value =
+    new Date().toLocaleDateString('sv-SE', {
+      timeZone: 'Asia/Tokyo'
+    });
+
+  document.getElementById('attendanceMessage').textContent = '';
+  document.getElementById('attendanceResults').replaceChildren();
+}
+
+function hideAttendancePanel() {
+  document.getElementById('attendancePanel').style.display = 'none';
+  document.getElementById('managerPanel').style.display = 'block';
+}
+
+async function loadAttendanceHistory() {
+  const employeeNameValue =
+    document.getElementById('attendanceEmployee').value.trim();
+
+  const targetDate =
+    document.getElementById('attendanceDate').value;
+
+  const message =
+    document.getElementById('attendanceMessage');
+
+  const results =
+    document.getElementById('attendanceResults');
+
+  const button =
+    document.getElementById('historyButton');
+
+  results.replaceChildren();
+
+  if (!employeeNameValue || !targetDate) {
+    message.textContent = '従業員名と日付を指定してください。';
+    return;
+  }
+
+  const managerToken =
+    sessionStorage.getItem('refarmManagerToken');
+
+  if (!managerToken) {
+    message.textContent = 'Manager認証が必要です。';
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent = '勤怠履歴を取得中...';
+
+  try {
+    const data = await callApi('managerAttendanceHistory', {
+      loginToken,
+      managerToken,
+      employeeName: employeeNameValue,
+      targetDate
+    });
+
+    if (!data || !Array.isArray(data.records)) {
+      throw new Error('勤怠履歴の応答が正しくありません。');
+    }
+
+    message.textContent =
+      data.records.length + '件の打刻が見つかりました。';
+
+    data.records.forEach(record => {
+      const item = document.createElement('div');
+      item.style.padding = '12px 0';
+      item.style.borderBottom = '1px solid #ddd';
+
+      const type = document.createElement('strong');
+      type.textContent = record.type;
+
+      const time = document.createElement('span');
+      time.textContent = '　' + record.time;
+
+      item.append(type, time);
+      results.appendChild(item);
+    });
+
+  } catch (error) {
+    message.textContent =
+      error.message || '勤怠履歴を取得できませんでした。';
+  } finally {
+    button.disabled = false;
+  }
+}
+
   </script>
 </body>
 </html>
