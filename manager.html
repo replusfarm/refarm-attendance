@@ -440,7 +440,14 @@ reasonInput.addEventListener('input', () => {
         '修正後：' + result.newTime + '\n' +
         '修正理由：' + result.reason + '\n\n' +
         '※確認のみです。実データは変更していません。';
+confirmedPreview = {
+  recordId: record.id,
+  expectedOldTime: result.oldTime,
+  newTime: result.newTime,
+  reason: result.reason
+};
 
+commitButton.disabled = false;
     } catch (error) {
       message.textContent =
         '確認できませんでした：' +
