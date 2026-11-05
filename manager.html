@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -96,6 +95,7 @@
 
       <button disabled>給与計算・再計算（準備中）</button>
       <button disabled>手当・控除管理（準備中）</button>
+      <button type="button" onclick="showPayslipPanel()">給与明細を確認する</button>
       <button disabled>給与明細の確定・公開（準備中）</button>
 
       <p class="note">
@@ -131,6 +131,17 @@
     管理メニューに戻る
   </button>
 </section>
+
+    <section class="card" id="payslipPanel" style="display:none;">
+      <h3>給与明細の確認（閲覧専用）</h3>
+      <p class="note">事業主の参考明細は表示しません。ここでは確定・公開できません。</p>
+      <label for="payslipMonth">対象年月</label>
+      <input id="payslipMonth" type="month">
+      <button id="payslipListButton" type="button" onclick="loadPayslipList()">給与明細を表示</button>
+      <p id="payslipMessage" role="status" style="white-space:pre-wrap;"></p>
+      <div id="payslipResults"></div>
+      <button class="secondary" type="button" onclick="hidePayslipPanel()">管理メニューに戻る</button>
+    </section>
 
     <button class="secondary" onclick="location.href='punch.html'">
       打刻画面に戻る
@@ -217,6 +228,85 @@
         'Manager画面からログアウトしました。';
     }
  
+ function showPayslipPanel() {
+   document.getElementById('managerPanel').style.display = 'none';
+   document.getElementById('attendancePanel').style.display = 'none';
+   document.getElementById('payslipPanel').style.display = 'block';
+   const japanNow = new Date().toLocaleDateString('sv-SE', {timeZone: 'Asia/Tokyo'});
+   const [year, month] = japanNow.slice(0, 7).split('-').map(Number);
+   const previousMonth = new Date(Date.UTC(year, month - 2, 1));
+   document.getElementById('payslipMonth').value =
+     previousMonth.getUTCFullYear() + '-' + String(previousMonth.getUTCMonth() + 1).padStart(2, '0');
+   document.getElementById('payslipMessage').textContent = '';
+   document.getElementById('payslipResults').replaceChildren();
+ }
+
+ function hidePayslipPanel() {
+   document.getElementById('payslipPanel').style.display = 'none';
+   document.getElementById('managerPanel').style.display = 'block';
+ }
+
+ function makePayslipDetail(label, value) {
+   const line = document.createElement('p');
+   line.style.margin = '7px 0';
+   line.textContent = label + '：' + value;
+   return line;
+ }
+
+ async function loadPayslipList() {
+   const message = document.getElementById('payslipMessage');
+   const results = document.getElementById('payslipResults');
+   const button = document.getElementById('payslipListButton');
+   const month = document.getElementById('payslipMonth').value;
+   results.replaceChildren();
+   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+     message.textContent = '対象年月を指定してください。';
+     return;
+   }
+   const managerToken = sessionStorage.getItem('refarmManagerToken');
+   if (!managerToken) {
+     message.textContent = 'Manager認証が必要です。再ログインしてください。';
+     return;
+   }
+   button.disabled = true;
+   message.textContent = '給与明細を取得中...';
+   try {
+     const data = await callApi('managerPayslipList', {
+       loginToken, managerToken, month
+     });
+     if (!data || data.month !== month || !Array.isArray(data.payslips)) {
+       throw new Error('給与明細一覧の応答が正しくありません。');
+     }
+     const money = value => {
+       if (value === '' || value === null || value === undefined) return '未入力';
+       const n = Number(value);
+       return Number.isFinite(n) ? n.toLocaleString('ja-JP') + '円' : '値を確認してください';
+     };
+     for (const slip of data.payslips) {
+       if (slip.employmentType === '事業主') continue;
+       const card = document.createElement('div');
+       card.style.cssText = 'padding:14px 0;border-bottom:1px solid #ddd;';
+       const name = document.createElement('strong');
+       name.textContent = slip.employeeName || '氏名未入力';
+       card.append(
+         name,
+         makePayslipDetail('雇用区分', slip.employmentType || '未入力'),
+         makePayslipDetail('総支給額', money(slip.grossPay)),
+         makePayslipDetail('源泉所得税', money(slip.incomeTax)),
+         makePayslipDetail('控除額', money(slip.deductions)),
+         makePayslipDetail('差引支給額', money(slip.netPay)),
+         makePayslipDetail('状態', slip.status || '未入力')
+       );
+       results.appendChild(card);
+     }
+     message.textContent = results.childElementCount + '件の給与明細を表示しています（閲覧専用）。';
+   } catch (error) {
+     message.textContent = '給与明細を取得できませんでした：' + (error.message || '不明なエラー');
+   } finally {
+     button.disabled = false;
+   }
+ }
+
 function showAttendancePanel() {
   document.getElementById('managerPanel').style.display = 'none';
   document.getElementById('attendancePanel').style.display = 'block';
@@ -571,3 +661,4 @@ form.append(
   </script>
 </body>
 </html>
+```
