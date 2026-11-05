@@ -96,6 +96,7 @@
       <button disabled>給与計算・再計算（準備中）</button>
       <button disabled>手当・控除管理（準備中）</button>
       <button type="button" onclick="showPayslipPanel()">給与明細を確認する</button>
+      <button type="button" onclick="showPayrollPreviewPanel()">給与確定前チェック</button>
       <button disabled>給与明細の確定・公開（準備中）</button>
 
       <p class="note">
@@ -131,7 +132,35 @@
     管理メニューに戻る
   </button>
 </section>
+<section class="card" id="payrollPreviewPanel" style="display:none;">
+  <h3>給与確定前チェック</h3>
+  <p class="note">
+    給与計算と給与明細の整合性を確認します。
+    この画面では給与の確定・公開は行いません。
+  </p>
 
+  <label for="payrollPreviewMonth">対象年月</label>
+  <input id="payrollPreviewMonth" type="month">
+
+  <button
+    id="payrollPreviewButton"
+    type="button"
+    onclick="loadPayrollPreview()">
+    確定前チェックを実行
+  </button>
+
+  <p id="payrollPreviewMessage"
+     role="status"
+     style="white-space:pre-wrap;"></p>
+
+  <div id="payrollPreviewResults"></div>
+
+  <button class="secondary"
+          type="button"
+          onclick="hidePayrollPreviewPanel()">
+    管理メニューに戻る
+  </button>
+</section>
     <section class="card" id="payslipPanel" style="display:none;">
       <h3>給与明細の確認（閲覧専用）</h3>
       <p class="note">事業主の参考明細は表示しません。ここでは確定・公開できません。</p>
@@ -227,7 +256,25 @@
       document.getElementById('message').textContent =
         'Manager画面からログアウトしました。';
     }
- 
+ function showPayrollPreviewPanel() {
+  document.getElementById('managerPanel').style.display = 'none';
+  document.getElementById('attendancePanel').style.display = 'none';
+  document.getElementById('payslipPanel').style.display = 'none';
+  document.getElementById('payrollPreviewPanel').style.display = 'block';
+
+  document.getElementById('payrollPreviewMonth').value =
+    new Date().toLocaleDateString('sv-SE', {
+      timeZone: 'Asia/Tokyo'
+    }).slice(0, 7);
+
+  document.getElementById('payrollPreviewMessage').textContent = '';
+  document.getElementById('payrollPreviewResults').replaceChildren();
+}
+
+function hidePayrollPreviewPanel() {
+  document.getElementById('payrollPreviewPanel').style.display = 'none';
+  document.getElementById('managerPanel').style.display = 'block';
+}
  function showPayslipPanel() {
    document.getElementById('managerPanel').style.display = 'none';
    document.getElementById('attendancePanel').style.display = 'none';
@@ -306,7 +353,73 @@
      button.disabled = false;
    }
  }
+async function loadPayrollPreview() {
+  const month = document.getElementById('payrollPreviewMonth').value;
+  const message = document.getElementById('payrollPreviewMessage');
+  const results = document.getElementById('payrollPreviewResults');
+  const button = document.getElementById('payrollPreviewButton');
 
+  results.replaceChildren();
+
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    message.textContent = '対象年月を指定してください。';
+    return;
+  }
+
+  const managerToken = sessionStorage.getItem('refarmManagerToken');
+
+  if (!managerToken) {
+    message.textContent = 'Manager認証が必要です。再ログインしてください。';
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent = '給与データを確認中...';
+
+  try {
+    const data = await callApi('managerPayrollConfirmPreview', {
+      loginToken,
+      managerToken,
+      month
+    });
+
+    if (!data || data.month !== month ||
+        data.previewOnly !== true ||
+        !Array.isArray(data.errors) ||
+        !Array.isArray(data.warnings) ||
+        !Array.isArray(data.targets)) {
+      throw new Error('確認結果の形式が正しくありません。');
+    }
+
+    const lines = [
+      '対象年月：' + data.month,
+      '確認対象：' + data.targetCount + '人',
+      '判定：' + (data.canConfirm === true
+        ? '確定前チェック通過'
+        : '要確認・確定不可'),
+      '',
+      '【エラー】',
+      ...(data.errors.length ? data.errors.map(String) : ['なし']),
+      '',
+      '【注意事項】',
+      ...(data.warnings.length ? data.warnings.map(String) : ['なし'])
+    ];
+
+    message.textContent = lines.join('\n');
+
+    const note = document.createElement('p');
+    note.className = 'note';
+    note.textContent = '確認のみです。給与の確定・公開は行っていません。';
+    results.appendChild(note);
+
+  } catch (error) {
+    message.textContent =
+      '確定前チェックに失敗しました：' +
+      (error.message || '不明なエラー');
+  } finally {
+    button.disabled = false;
+  }
+}
 function showAttendancePanel() {
   document.getElementById('managerPanel').style.display = 'none';
   document.getElementById('attendancePanel').style.display = 'block';
