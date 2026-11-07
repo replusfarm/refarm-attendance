@@ -112,33 +112,10 @@
     '?action=employees&callback=' +
     encodeURIComponent(callbackName);
 
-  document.head.appendChild(script);
-}        const employees = Array.isArray(result.employees)
-  ? result.employees
-  : [];
+   document.head.appendChild(script);
+}
 
-        select.innerHTML = '<option value="">名前を選択</option>';
-
-        employees.forEach(item => {
-          const name = typeof item === 'string' ? item : item.name;
-          if (!name) return;
-          const option = document.createElement('option');
-          option.value = name;
-          option.textContent = name;
-          select.appendChild(option);
-        });
-
-        if (!employees.length) {
-          throw new Error('従業員一覧が空です');
-        }
-      } catch (error) {
-        document.getElementById('message').textContent =
-          '従業員一覧エラー：' + error.message;
-      }
-    }
-
-    async function login() {
-      const name = document.getElementById('name').value;
+async function login() {      const name = document.getElementById('name').value;
       const personalId = document.getElementById('pin').value;
       const message = document.getElementById('message');
       const button = document.getElementById('loginButton');
