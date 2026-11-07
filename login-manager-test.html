@@ -48,17 +48,72 @@
 
   <script>
    const GAS_URL =
-  'https://script.google.com/macros/s/AKfycbzj6sUeOUsb8xuSS_YJ52ukSRyrkjL6VEtnaC1KIXtwZ_4Knw5bENpcDfBqAKfEY70oUw/exec';    async function loadEmployees() {
-      const select = document.getElementById('name');
-      try {
-        const response = await fetch(GAS_URL + '?action=employees');
-        const result = await response.json();
+  'https://script.google.com/macros/s/AKfycbzj6sUeOUsb8xuSS_YJ52ukSRyrkjL6VEtnaC1KIXtwZ_4Knw5bENpcDfBqAKfEY70oUw/exec';    
+    function loadEmployees() {
+  const select = document.getElementById('name');
+  const message = document.getElementById('message');
 
-        if (!result.success) {
-          throw new Error(result.message || '従業員一覧の取得に失敗しました');
-        }
+  const callbackName = 'refarmEmployeesCallback';
+  const script = document.createElement('script');
 
-        const employees = Array.isArray(result.employees)
+  const timeout = setTimeout(() => {
+    cleanup();
+    message.textContent =
+      '従業員一覧エラー：通信がタイムアウトしました';
+  }, 15000);
+
+  function cleanup() {
+    clearTimeout(timeout);
+    script.remove();
+    delete window[callbackName];
+  }
+
+  window[callbackName] = function(result) {
+    cleanup();
+
+    if (!result || !result.success) {
+      message.textContent =
+        '従業員一覧の取得に失敗しました';
+      return;
+    }
+
+    const employees = Array.isArray(result.employees)
+      ? result.employees
+      : [];
+
+    select.innerHTML = '<option value="">名前を選択</option>';
+
+    employees.forEach(item => {
+      const name = typeof item === 'string'
+        ? item
+        : item.name;
+
+      if (!name) return;
+
+      const option = document.createElement('option');
+      option.value = name;
+      option.textContent = name;
+      select.appendChild(option);
+    });
+
+    if (!employees.length) {
+      message.textContent = '従業員一覧が空です';
+    }
+  };
+
+  script.onerror = function() {
+    cleanup();
+    message.textContent =
+      '従業員一覧エラー：通信に失敗しました';
+  };
+
+  script.src =
+    GAS_URL +
+    '?action=employees&callback=' +
+    encodeURIComponent(callbackName);
+
+  document.head.appendChild(script);
+}        const employees = Array.isArray(result.employees)
   ? result.employees
   : [];
 
