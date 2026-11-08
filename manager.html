@@ -93,7 +93,9 @@
   勤怠履歴を見る
 </button>
 
-      <button disabled>給与計算・再計算（準備中）</button>
+      
+<button type="button" onclick="showRecalcPrecheck()">給与計算・再計算</button>
+
       <button disabled>手当・控除管理（準備中）</button>
       <button type="button" onclick="showPayslipPanel()">給与明細を確認する</button>
       <button type="button" onclick="showPayrollPreviewPanel()">給与確定前チェック</button>
@@ -769,6 +771,43 @@ form.append(
 
 
   item.appendChild(form);
+}
+
+async function showRecalcPrecheck() {
+  const month = prompt(
+    '給与再計算の事前確認：対象年月を入力してください',
+    '2026-11'
+  );
+
+  if (month === null) return;
+
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    alert('対象年月は YYYY-MM 形式で入力してください。');
+    return;
+  }
+
+  try {
+    const response = await callApi('managerPayrollRecalcPrecheck', {
+      loginToken: loginToken,
+      managerToken: sessionStorage.getItem('refarmManagerToken'),
+      month: month
+    });
+
+    const data = response.data || response;
+
+    alert(
+      '【給与再計算・事前確認】\n' +
+      '対象月：' + data.month + '\n' +
+      '給与計算：' + data.calculationCount + '件\n' +
+      '給与明細：' + data.payslipCount + '件\n' +
+      '判定：' + (data.canRecalculate ? '事前確認通過' : '再計算不可') +
+      '\n\n' +
+      (data.errors.length ? data.errors.join('\n') : '検出された問題なし') +
+      '\n\n※給与データは変更していません。'
+    );
+  } catch (error) {
+    alert('事前確認エラー：' + error.message);
+  }
 }
 
   </script>
