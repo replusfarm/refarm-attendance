@@ -313,12 +313,30 @@ function hidePayrollPreviewPanel() {
   document.getElementById('managerPanel').style.display = 'block';
 }
 
+
 function showPayrollFinalizePanel() {
   document.getElementById('managerPanel').style.display = 'none';
   document.getElementById('attendancePanel').style.display = 'none';
   document.getElementById('payslipPanel').style.display = 'none';
   document.getElementById('payrollPreviewPanel').style.display = 'none';
   document.getElementById('payrollFinalizePanel').style.display = 'block';
+
+  const japanNow = new Date().toLocaleDateString('sv-SE', {
+    timeZone: 'Asia/Tokyo'
+  });
+
+  const [year, month] = japanNow.slice(0, 7).split('-').map(Number);
+  const previousMonth = new Date(Date.UTC(year, month - 2, 1));
+
+  document.getElementById('payrollFinalizeMonth').value =
+    previousMonth.getUTCFullYear() + '-' +
+    String(previousMonth.getUTCMonth() + 1).padStart(2, '0');
+
+  document.getElementById('payrollFinalizeMessage').textContent =
+    '給与を確定する前に、対象月のデータを確認してください。';
+
+  document.getElementById('payrollConfirmButton').disabled = true;
+  document.getElementById('payrollPublishButton').disabled = true;
 }
 
 function hidePayrollFinalizePanel() {
