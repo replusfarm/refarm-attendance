@@ -165,6 +165,27 @@
     管理メニューに戻る
   </button>
 </section>
+    <section class="card" id="payrollFinalizePanel" style="display:none;">
+  <h3>給与明細の確定・公開</h3>
+
+  <p class="note">
+    給与計算と明細を確認してから確定します。
+    公開は翌月10日です。
+  </p>
+
+  <label for="payrollFinalizeMonth">対象年月</label>
+  <input id="payrollFinalizeMonth" type="month">
+
+  <p id="payrollFinalizeMessage"
+     role="status"
+     style="white-space:pre-wrap;"></p>
+
+  <button class="secondary"
+          type="button"
+          onclick="hidePayrollFinalizePanel()">
+    管理メニューに戻る
+  </button>
+</section>
     <section class="card" id="payslipPanel" style="display:none;">
       <h3>給与明細の確認（閲覧専用）</h3>
       <p class="note">事業主の参考明細は表示しません。ここでは確定・公開できません。</p>
