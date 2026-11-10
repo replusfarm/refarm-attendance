@@ -179,7 +179,19 @@
   <p id="payrollFinalizeMessage"
      role="status"
      style="white-space:pre-wrap;"></p>
+<button id="payrollConfirmButton"
+        type="button"
+        onclick="confirmPayrollPayslips()"
+        disabled>
+  給与明細を確定する
+</button>
 
+<button id="payrollPublishButton"
+        type="button"
+        onclick="publishPayrollPayslips()"
+        disabled>
+  給与明細を公開する
+</button>
   <button class="secondary"
           type="button"
           onclick="hidePayrollFinalizePanel()">
