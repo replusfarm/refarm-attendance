@@ -279,6 +279,19 @@ function hidePayrollPreviewPanel() {
   document.getElementById('payrollPreviewPanel').style.display = 'none';
   document.getElementById('managerPanel').style.display = 'block';
 }
+
+function showPayrollFinalizePanel() {
+  document.getElementById('managerPanel').style.display = 'none';
+  document.getElementById('attendancePanel').style.display = 'none';
+  document.getElementById('payslipPanel').style.display = 'none';
+  document.getElementById('payrollPreviewPanel').style.display = 'none';
+  document.getElementById('payrollFinalizePanel').style.display = 'block';
+}
+
+function hidePayrollFinalizePanel() {
+  document.getElementById('payrollFinalizePanel').style.display = 'none';
+  document.getElementById('managerPanel').style.display = 'block';
+}    
  function showPayslipPanel() {
    document.getElementById('managerPanel').style.display = 'none';
    document.getElementById('attendancePanel').style.display = 'none';
