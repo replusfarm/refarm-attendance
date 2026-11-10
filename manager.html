@@ -176,6 +176,12 @@
   <label for="payrollFinalizeMonth">対象年月</label>
   <input id="payrollFinalizeMonth" type="month">
 
+<button id="payrollFinalizeCheckButton"
+        type="button"
+        onclick="checkPayrollBeforeFinalize()">
+  確定前チェックを実行
+</button>
+
   <p id="payrollFinalizeMessage"
      role="status"
      style="white-space:pre-wrap;"></p>
@@ -342,7 +348,73 @@ function showPayrollFinalizePanel() {
 function hidePayrollFinalizePanel() {
   document.getElementById('payrollFinalizePanel').style.display = 'none';
   document.getElementById('managerPanel').style.display = 'block';
-}    
+} 
+
+async function checkPayrollBeforeFinalize() {
+  const month = document.getElementById('payrollFinalizeMonth').value;
+  const message = document.getElementById('payrollFinalizeMessage');
+  const checkButton = document.getElementById('payrollFinalizeCheckButton');
+  const confirmButton = document.getElementById('payrollConfirmButton');
+  const publishButton = document.getElementById('payrollPublishButton');
+
+  confirmButton.disabled = true;
+  publishButton.disabled = true;
+
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    message.textContent = '対象年月を指定してください。';
+    return;
+  }
+
+  const managerToken = sessionStorage.getItem('refarmManagerToken');
+
+  if (!managerToken) {
+    message.textContent = 'Manager認証が必要です。';
+    return;
+  }
+
+  checkButton.disabled = true;
+  message.textContent = '確定前チェックを実行中...';
+
+  try {
+    const data = await callApi('managerPayrollConfirmPreview', {
+      loginToken,
+      managerToken,
+      month
+    });
+
+    if (!data ||
+        data.month !== month ||
+        data.previewOnly !== true ||
+        !Array.isArray(data.errors) ||
+        !Array.isArray(data.warnings) ||
+        !Array.isArray(data.targets)) {
+      throw new Error('チェック結果の形式が正しくありません。');
+    }
+
+    message.textContent = [
+      '対象年月：' + month,
+      '確認対象：' + data.targetCount + '人',
+      '判定：' + (data.canConfirm === true ? 'チェック通過' : '確定不可'),
+      '',
+      '【エラー】',
+      ...(data.errors.length ? data.errors.map(String) : ['なし']),
+      '',
+      '【注意事項】',
+      ...(data.warnings.length ? data.warnings.map(String) : ['なし']),
+      '',
+      '※確認のみです。給与データは変更していません。'
+    ].join('\n');
+
+    // 確定・公開ボタンは次の段階まで無効のまま
+  } catch (error) {
+    message.textContent =
+      '確定前チェックに失敗しました：' +
+      (error.message || '不明なエラー');
+  } finally {
+    checkButton.disabled = false;
+  }
+}
+    
  function showPayslipPanel() {
    document.getElementById('managerPanel').style.display = 'none';
    document.getElementById('attendancePanel').style.display = 'none';
