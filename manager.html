@@ -421,8 +421,35 @@ async function checkPayrollBeforeFinalize() {
       monthFinished
     );
 
-    // 公開ボタンは、確定済み状態を確認するまで無効
-    publishButton.disabled = true;
+    
+    // 翌月10日以降か確認
+    const [year, targetMonth] = month.split('-').map(Number);
+    const releaseDate = new Date(
+      Date.UTC(year, targetMonth, 10)
+    ).toISOString().slice(0, 10);
+
+    // 全員の給与明細が確定済みか確認
+    const allConfirmed =
+      Number.isInteger(data.targetCount) &&
+      data.targetCount > 0 &&
+      data.targets.length === data.targetCount &&
+      data.targets.every(item =>
+        item.payslipStatus === '確定' ||
+        item.payslipStatus === '公開済み'
+      );
+
+   // 確定済みで公開日を迎えていれば公開可能
+// 給与状態以外のエラーがないことも確認
+const nonStatusErrors = data.errors.filter(error =>
+  !String(error).includes('給与状態が未確定ではありません')
+);
+
+publishButton.disabled = !(
+  allConfirmed &&
+  nonStatusErrors.length === 0 &&
+  today >= releaseDate
+);
+
 
   } catch (error) {
     message.textContent =
@@ -432,6 +459,77 @@ async function checkPayrollBeforeFinalize() {
     checkButton.disabled = false;
   }
 }
+
+async function confirmPayrollPayslips() {
+  const month = document.getElementById('payrollFinalizeMonth').value;
+  const message = document.getElementById('payrollFinalizeMessage');
+  const confirmButton = document.getElementById('payrollConfirmButton');
+  const publishButton = document.getElementById('payrollPublishButton');
+
+  if (confirmButton.disabled) return;
+
+  if (!window.confirm(month + '分の給与明細を確定しますか？\n確定後は給与データの変更が制限されます。')) {
+    return;
+  }
+
+  const managerToken = sessionStorage.getItem('refarmManagerToken');
+
+  confirmButton.disabled = true;
+  publishButton.disabled = true;
+  message.textContent = '給与明細を確定しています...';
+
+  try {
+    const data = await callApi('payrollConfirmPayslips', {
+      loginToken,
+      managerToken,
+      month
+    });
+
+    message.textContent =
+      month + '分の給与明細を確定しました。\n' +
+      '確定件数：' + data.confirmedCount + '件';
+
+  } catch (error) {
+    message.textContent =
+      '給与確定に失敗しました：' + error.message;
+  }
+}
+
+async function publishPayrollPayslips() {
+  const month = document.getElementById('payrollFinalizeMonth').value;
+  const message = document.getElementById('payrollFinalizeMessage');
+  const publishButton = document.getElementById('payrollPublishButton');
+  const confirmButton = document.getElementById('payrollConfirmButton');
+
+  if (publishButton.disabled) return;
+
+  if (!window.confirm(month + '分の給与明細を従業員に公開しますか？')) {
+    return;
+  }
+
+  const managerToken = sessionStorage.getItem('refarmManagerToken');
+
+  publishButton.disabled = true;
+  confirmButton.disabled = true;
+  message.textContent = '給与明細を公開しています...';
+
+  try {
+    const data = await callApi('payrollPublishPayslips', {
+      loginToken,
+      managerToken,
+      month
+    });
+
+    message.textContent =
+      month + '分の給与明細を公開しました。\n' +
+      '今回の公開件数：' + data.publishedCount + '件';
+
+  } catch (error) {
+    message.textContent =
+      '給与公開に失敗しました：' + error.message;
+  }
+}
+
     
  function showPayslipPanel() {
    document.getElementById('managerPanel').style.display = 'none';
