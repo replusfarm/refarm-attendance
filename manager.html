@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Re:+farm Manager</title>
+  <title>Re:+farm Lord</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -61,24 +61,24 @@
 </head>
 <body>
   <header>
-    <h2>Re:+farm Manager</h2>
+    <h2>Re:+farm Lord</h2>
     <p>管理者専用画面</p>
   </header>
 
   <main>
     <section class="card" id="loginPanel">
-      <h3>Manager認証</h3>
+      <h3>Lord認証</h3>
       <p>LordIDを入力してください。</p>
 
       <input
         id="managerPassword"
         type="password"
         autocomplete="off"
-        placeholder="給与明細閲覧PASS"
+        placeholder="LordID"
       >
 
       <button id="loginButton" onclick="managerLogin()">
-        Managerログイン
+        Lordログイン
       </button>
 
       <p id="message"></p>
@@ -104,11 +104,11 @@
 </button>
 
       <p class="note">
-        各機能はサーバー側の管理者認証を接続後に利用できます。
+        各機能はLord認証後に利用できます。
       </p>
 
       <button class="secondary" onclick="logoutManager()">
-        Managerログアウト
+        Lordログアウト
       </button>
     </section>
 
@@ -321,7 +321,7 @@
       const button = document.getElementById('loginButton');
 
       if (!password) {
-        message.textContent = 'PASSを入力してください。';
+        message.textContent = 'LordIDを入力してください。';
         return;
       }
 
@@ -335,7 +335,7 @@
         });
 
         if (!result.success || !result.managerToken) {
-          throw new Error('Manager認証に失敗しました');
+          throw new Error('Lord認証に失敗しました');
         }
 
         sessionStorage.setItem(
@@ -361,7 +361,7 @@
       document.getElementById('managerPanel').style.display = 'none';
       document.getElementById('loginPanel').style.display = 'block';
       document.getElementById('message').textContent =
-        'Manager画面からログアウトしました。';
+        'Lord画面からログアウトしました';
     }
  function showPayrollPreviewPanel() {
   document.getElementById('managerPanel').style.display = 'none';
@@ -432,7 +432,7 @@ async function checkPayrollBeforeFinalize() {
   const managerToken = sessionStorage.getItem('refarmManagerToken');
 
   if (!managerToken) {
-    message.textContent = 'Manager認証が必要です。';
+    message.textContent = 'Lord認証が必要です。';
     return;
   }
 
@@ -632,7 +632,7 @@ async function publishPayrollPayslips() {
    }
    const managerToken = sessionStorage.getItem('refarmManagerToken');
    if (!managerToken) {
-     message.textContent = 'Manager認証が必要です。再ログインしてください。';
+     message.textContent = 'Lord認証が必要です。再ログインしてください。';
      return;
    }
    button.disabled = true;
@@ -689,7 +689,7 @@ async function loadPayrollPreview() {
   const managerToken = sessionStorage.getItem('refarmManagerToken');
 
   if (!managerToken) {
-    message.textContent = 'Manager認証が必要です。再ログインしてください。';
+    message.textContent = 'Lord認証が必要です。再ログインしてください。';
     return;
   }
 
@@ -788,7 +788,7 @@ async function loadAttendanceHistory() {
     sessionStorage.getItem('refarmManagerToken');
 
   if (!managerToken) {
-    message.textContent = 'Manager認証が必要です。';
+    message.textContent = 'Lord認証が必要です。';
     return;
   }
 
@@ -945,7 +945,7 @@ commitButton.addEventListener('click', async () => {
       sessionStorage.getItem('refarmManagerToken');
 
     if (!managerToken) {
-      throw new Error('Manager認証が必要です。');
+      throw new Error('Lord認証が必要です。');
     }
 
     const result = await callApi(
@@ -1017,7 +1017,7 @@ reasonInput.addEventListener('input', () => {
       sessionStorage.getItem('refarmManagerToken');
 
     if (!managerToken) {
-      message.textContent = 'Manager認証が必要です。';
+      message.textContent = 'Lord認証が必要です。';
       return;
     }
 
@@ -1135,7 +1135,7 @@ async function confirmPayrollPayslips() {
   const managerToken = sessionStorage.getItem('refarmManagerToken');
 
   if (!managerToken) {
-    message.textContent = 'Manager認証が必要です。';
+    message.textContent = 'Lord認証が必要です。';
     return;
   }
 
@@ -1199,7 +1199,7 @@ async function publishPayrollPayslips() {
   const managerToken = sessionStorage.getItem('refarmManagerToken');
 
   if (!managerToken) {
-    message.textContent = 'Manager認証が必要です。';
+    message.textContent = 'Lord認証が必要です。';
     return;
   }
 
