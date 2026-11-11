@@ -1,3 +1,9 @@
+
+
+
+
+
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -524,75 +530,6 @@ publishButton.disabled = !(
   }
 }
 
-async function confirmPayrollPayslips() {
-  const month = document.getElementById('payrollFinalizeMonth').value;
-  const message = document.getElementById('payrollFinalizeMessage');
-  const confirmButton = document.getElementById('payrollConfirmButton');
-  const publishButton = document.getElementById('payrollPublishButton');
-
-  if (confirmButton.disabled) return;
-
-  if (!window.confirm(month + '分の給与明細を確定しますか？\n確定後は給与データの変更が制限されます。')) {
-    return;
-  }
-
-  const managerToken = sessionStorage.getItem('refarmManagerToken');
-
-  confirmButton.disabled = true;
-  publishButton.disabled = true;
-  message.textContent = '給与明細を確定しています...';
-
-  try {
-    const data = await callApi('payrollConfirmPayslips', {
-      loginToken,
-      managerToken,
-      month
-    });
-
-    message.textContent =
-      month + '分の給与明細を確定しました。\n' +
-      '確定件数：' + data.confirmedCount + '件';
-
-  } catch (error) {
-    message.textContent =
-      '給与確定に失敗しました：' + error.message;
-  }
-}
-
-async function publishPayrollPayslips() {
-  const month = document.getElementById('payrollFinalizeMonth').value;
-  const message = document.getElementById('payrollFinalizeMessage');
-  const publishButton = document.getElementById('payrollPublishButton');
-  const confirmButton = document.getElementById('payrollConfirmButton');
-
-  if (publishButton.disabled) return;
-
-  if (!window.confirm(month + '分の給与明細を従業員に公開しますか？')) {
-    return;
-  }
-
-  const managerToken = sessionStorage.getItem('refarmManagerToken');
-
-  publishButton.disabled = true;
-  confirmButton.disabled = true;
-  message.textContent = '給与明細を公開しています...';
-
-  try {
-    const data = await callApi('payrollPublishPayslips', {
-      loginToken,
-      managerToken,
-      month
-    });
-
-    message.textContent =
-      month + '分の給与明細を公開しました。\n' +
-      '今回の公開件数：' + data.publishedCount + '件';
-
-  } catch (error) {
-    message.textContent =
-      '給与公開に失敗しました：' + error.message;
-  }
-}
 
     
  function showPayslipPanel() {
@@ -1455,3 +1392,7 @@ async function savePayDeduction() {
 </body>
 </html>
 ```
+
+
+
+
