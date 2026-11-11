@@ -96,7 +96,7 @@
       
 <button type="button" onclick="showRecalcPrecheck()">給与計算・再計算</button>
 
-      <button disabled>手当・控除管理（準備中）</button>
+      <button type="button" onclick="showPayAdjustPanel()">手当・控除管理</button>
       <button type="button" onclick="showPayslipPanel()">給与明細を確認する</button>
       <button type="button" onclick="showPayrollPreviewPanel()">給与確定前チェック</button>
       <button type="button" onclick="showPayrollFinalizePanel()">
@@ -204,6 +204,70 @@
     管理メニューに戻る
   </button>
 </section>
+    
+<section class="card" id="payAdjustPanel" style="display:none;">
+  <h3>手当・控除管理</h3>
+
+  <label>対象年月</label>
+  <input id="adjustMonth" type="month">
+
+  <button type="button" onclick="loadPayAdjust()">
+    一覧を表示
+  </button>
+
+  <p id="adjustMessage" style="white-space:pre-wrap" role="status"></p>
+
+  <label>従業員</label>
+  <select id="adjustEmployee"
+    style="width:100%;padding:15px;font-size:16px">
+  </select>
+
+  <h4>手当の登録・修正</h4>
+  <input type="hidden" id="adjustId">
+
+  <label>手当名</label>
+  <input id="adjustLabel" placeholder="例：特別手当">
+
+  <label>金額（円）</label>
+  <input id="adjustAmount" type="number" min="0" step="1">
+
+  <label>課税区分</label>
+  <select id="adjustTax"
+    style="width:100%;padding:15px;font-size:16px">
+    <option>課税</option>
+    <option>非課税</option>
+  </select>
+
+  <button type="button" onclick="savePayAllowance()">
+    手当を保存
+  </button>
+
+  <button class="secondary" type="button"
+    onclick="clearPayAllowance()">
+    手当入力をクリア
+  </button>
+
+  <h4>その他控除（合計額）</h4>
+  <p class="note">
+    控除の内訳別管理ではなく、給与計算M列の合計額です。
+  </p>
+
+  <input id="adjustDeduction" type="number"
+    min="0" step="1" placeholder="その他控除額（円）">
+
+  <button type="button" onclick="savePayDeduction()">
+    その他控除額を保存
+  </button>
+
+  <h4>登録済み手当</h4>
+  <div id="adjustList"></div>
+
+  <button class="secondary" type="button"
+    onclick="hidePayAdjustPanel()">
+    管理メニューに戻る
+  </button>
+</section>
+    
     <section class="card" id="payslipPanel" style="display:none;">
       <h3>給与明細の確認（閲覧専用）</h3>
       <p class="note">事業主の参考明細は表示しません。ここでは確定・公開できません。</p>
@@ -1174,6 +1238,216 @@ async function publishPayrollPayslips() {
       '公開処理の応答：\n' + JSON.stringify(result, null, 2);
   } catch (error) {
     message.textContent = '公開できませんでした：' + error.message;
+  }
+}
+
+let adjustCache = null;
+
+function showPayAdjustPanel() {
+  document.querySelectorAll('main > section.card')
+    .forEach(el => el.style.display = 'none');
+
+  document.getElementById('payAdjustPanel').style.display = 'block';
+
+  document.getElementById('adjustMonth').value =
+    new Date().toLocaleDateString('sv-SE', {
+      timeZone: 'Asia/Tokyo'
+    }).slice(0, 7);
+
+  loadPayAdjust();
+}
+
+function hidePayAdjustPanel() {
+  document.getElementById('payAdjustPanel').style.display = 'none';
+  document.getElementById('managerPanel').style.display = 'block';
+}
+
+function adjustArgs() {
+  return {
+    loginToken,
+    managerToken: sessionStorage.getItem('refarmManagerToken'),
+    month: document.getElementById('adjustMonth').value
+  };
+}
+
+function clearPayAllowance() {
+  ['adjustId', 'adjustLabel', 'adjustAmount'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('adjustTax').value = '課税';
+}
+
+async function loadPayAdjust() {
+  const msg = document.getElementById('adjustMessage');
+  msg.textContent = '読み込み中...';
+
+  try {
+    const data = await callApi('managerPayAdjustList', adjustArgs());
+
+    if (!data ||
+        !Array.isArray(data.employees) ||
+        !Array.isArray(data.allowances)) {
+      throw Error('応答が不正です');
+    }
+
+    adjustCache = data;
+
+    const select = document.getElementById('adjustEmployee');
+    const old = select.value;
+    select.replaceChildren();
+
+    data.employees.forEach(e => {
+      const option = document.createElement('option');
+      option.value = e.name;
+      option.textContent = e.name;
+      select.appendChild(option);
+    });
+
+    if (data.employees.some(e => e.name === old)) {
+      select.value = old;
+    }
+
+    const list = document.getElementById('adjustList');
+    list.replaceChildren();
+
+    data.allowances.forEach(a => {
+      const div = document.createElement('div');
+      div.style.cssText =
+        'border-bottom:1px solid #ddd;padding:8px 0';
+
+      const p = document.createElement('p');
+      p.textContent =
+        `${a.name}｜${a.label}｜` +
+        `${a.amount.toLocaleString('ja-JP')}円｜${a.taxType}`;
+
+      const edit = document.createElement('button');
+      edit.textContent = '修正';
+      edit.type = 'button';
+
+      edit.onclick = () => {
+        select.value = a.name;
+        document.getElementById('adjustId').value = a.id;
+        document.getElementById('adjustLabel').value = a.label;
+        document.getElementById('adjustAmount').value = a.amount;
+        document.getElementById('adjustTax').value = a.taxType;
+      };
+
+      const del = document.createElement('button');
+      del.textContent = '削除';
+      del.className = 'secondary';
+      del.type = 'button';
+
+      del.onclick = async () => {
+        if (!confirm(
+          `${a.name}の「${a.label}」を削除しますか？`
+        )) return;
+
+        try {
+          await callApi('managerPayAdjustDeleteAllowance', {
+            ...adjustArgs(),
+            id: a.id
+          });
+
+          clearPayAllowance();
+          await loadPayAdjust();
+        } catch (e) {
+          msg.textContent = '削除失敗：' + e.message;
+        }
+      };
+
+      div.append(p, edit, del);
+      list.appendChild(div);
+    });
+
+    const syncDeduction = () => {
+      const deduction = (data.deductions || [])
+        .find(d => d.name === select.value);
+
+      document.getElementById('adjustDeduction').value =
+        deduction ? deduction.amount : '';
+    };
+
+    select.onchange = () => {
+      clearPayAllowance();
+      syncDeduction();
+    };
+
+    syncDeduction();
+
+    msg.textContent =
+      `手当${data.allowances.length}件を表示。` +
+      '変更後は給与再計算が必要です。';
+
+  } catch (e) {
+    msg.textContent = '読み込み失敗：' + e.message;
+  }
+}
+
+async function savePayAllowance() {
+  const msg = document.getElementById('adjustMessage');
+
+  const data = {
+    ...adjustArgs(),
+    id: document.getElementById('adjustId').value,
+    name: document.getElementById('adjustEmployee').value,
+    label: document.getElementById('adjustLabel').value.trim(),
+    amount: document.getElementById('adjustAmount').value,
+    taxType: document.getElementById('adjustTax').value
+  };
+
+  if (!data.name ||
+      !data.label ||
+      data.amount === '' ||
+      !Number.isSafeInteger(Number(data.amount)) ||
+      Number(data.amount) < 0) {
+    msg.textContent = '入力を確認してください';
+    return;
+  }
+
+  if (!confirm('手当を保存しますか？')) return;
+
+  try {
+    await callApi('managerPayAdjustSaveAllowance', data);
+    clearPayAllowance();
+    await loadPayAdjust();
+    msg.textContent = '保存しました。給与再計算が必要です。';
+  } catch (e) {
+    msg.textContent = '保存失敗：' + e.message;
+  }
+}
+
+async function savePayDeduction() {
+  const msg = document.getElementById('adjustMessage');
+  const amount =
+    document.getElementById('adjustDeduction').value;
+
+  if (amount === '' ||
+      !Number.isSafeInteger(Number(amount)) ||
+      Number(amount) < 0) {
+    msg.textContent = '控除額を確認してください';
+    return;
+  }
+
+  if (!confirm(
+    'その他控除額を更新しますか？' +
+    '源泉税と差引支給額の再計算が必要です。'
+  )) return;
+
+  try {
+    await callApi('managerPayAdjustSetDeduction', {
+      ...adjustArgs(),
+      name: document.getElementById('adjustEmployee').value,
+      amount
+    });
+
+    await loadPayAdjust();
+
+    msg.textContent =
+      '控除額を保存しました。' +
+      '源泉税・差引支給額の再計算が必要です。';
+
+  } catch (e) {
+    msg.textContent = '保存失敗：' + e.message;
   }
 }
 
