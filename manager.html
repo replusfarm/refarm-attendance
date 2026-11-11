@@ -405,7 +405,25 @@ async function checkPayrollBeforeFinalize() {
       '※確認のみです。給与データは変更していません。'
     ].join('\n');
 
-    // 確定・公開ボタンは次の段階まで無効のまま
+    
+    // チェック結果に応じて確定ボタンを制御
+    const today = new Date().toLocaleDateString('sv-SE', {
+      timeZone: 'Asia/Tokyo'
+    });
+
+    const monthFinished = month < today.slice(0, 7);
+
+    confirmButton.disabled = !(
+      data.canConfirm === true &&
+      data.errors.length === 0 &&
+      Number.isInteger(data.targetCount) &&
+      data.targetCount > 0 &&
+      monthFinished
+    );
+
+    // 公開ボタンは、確定済み状態を確認するまで無効
+    publishButton.disabled = true;
+
   } catch (error) {
     message.textContent =
       '確定前チェックに失敗しました：' +
@@ -945,6 +963,119 @@ async function showRecalcPrecheck() {
     );
   } catch (error) {
     alert('事前確認エラー：' + error.message);
+  }
+}
+
+async function confirmPayrollPayslips() {
+  const month = document.getElementById('payrollFinalizeMonth').value;
+  const message = document.getElementById('payrollFinalizeMessage');
+  const button = document.getElementById('payrollConfirmButton');
+  const managerToken = sessionStorage.getItem('refarmManagerToken');
+
+  if (!managerToken) {
+    message.textContent = 'Manager認証が必要です。';
+    return;
+  }
+
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    message.textContent = '対象年月を確認してください。';
+    return;
+  }
+
+  const today = new Date().toLocaleDateString('sv-SE', {
+    timeZone: 'Asia/Tokyo'
+  });
+
+  if (month >= today.slice(0, 7)) {
+    message.textContent = '対象月が終了していないため確定できません。';
+    return;
+  }
+
+  button.disabled = true;
+
+  try {
+    const check = await callApi('managerPayrollConfirmPreview', {
+      loginToken, managerToken, month
+    });
+
+    if (!check || check.month !== month ||
+        check.canConfirm !== true ||
+        !Array.isArray(check.errors) ||
+        check.errors.length > 0 ||
+        !Number.isInteger(check.targetCount) ||
+        check.targetCount < 1) {
+      throw new Error('確定前チェックを通過していません。');
+    }
+
+    if (!window.confirm(
+      month + ' の給与明細 ' + check.targetCount +
+      '人分を確定します。\n確定後は再計算できなくなります。\n\n実行しますか？'
+    )) {
+      message.textContent = '確定をキャンセルしました。';
+      return;
+    }
+
+    message.textContent = '給与明細を確定中...';
+
+    const result = await callApi('payrollConfirmPayslips', {
+      loginToken, managerToken, month
+    });
+
+    message.textContent =
+      '確定処理の応答：\n' + JSON.stringify(result, null, 2);
+
+    document.getElementById('payrollPublishButton').disabled = true;
+  } catch (error) {
+    message.textContent = '確定できませんでした：' + error.message;
+  }
+}
+
+async function publishPayrollPayslips() {
+  const month = document.getElementById('payrollFinalizeMonth').value;
+  const message = document.getElementById('payrollFinalizeMessage');
+  const button = document.getElementById('payrollPublishButton');
+  const managerToken = sessionStorage.getItem('refarmManagerToken');
+
+  if (!managerToken) {
+    message.textContent = 'Manager認証が必要です。';
+    return;
+  }
+
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
+    message.textContent = '対象年月を確認してください。';
+    return;
+  }
+
+  const [year, m] = month.split('-').map(Number);
+  const publishDate = new Date(Date.UTC(year, m, 10))
+    .toISOString().slice(0, 10);
+
+  const today = new Date().toLocaleDateString('sv-SE', {
+    timeZone: 'Asia/Tokyo'
+  });
+
+  if (today < publishDate) {
+    message.textContent =
+      '公開可能日は ' + publishDate + ' 以降です。';
+    return;
+  }
+
+  if (!window.confirm(
+    month + ' の確定済み給与明細を従業員に公開します。\n\n実行しますか？'
+  )) return;
+
+  button.disabled = true;
+  message.textContent = '給与明細を公開中...';
+
+  try {
+    const result = await callApi('payrollPublishPayslips', {
+      loginToken, managerToken, month
+    });
+
+    message.textContent =
+      '公開処理の応答：\n' + JSON.stringify(result, null, 2);
+  } catch (error) {
+    message.textContent = '公開できませんでした：' + error.message;
   }
 }
 
