@@ -100,7 +100,7 @@
 </button>
 
       
-<button type="button" onclick="showRecalcPrecheck()">給与計算・再計算</button>
+<button type="button" id="recalcButton" onclick="showRecalcPrecheck()">給与計算・再計算</button>
 
       <button type="button" onclick="showPayAdjustPanel()">手当・控除管理</button>
       <button type="button" onclick="showPayslipPanel()">給与明細を確認する</button>
@@ -1029,39 +1029,48 @@ form.append(
 }
 
 async function showRecalcPrecheck() {
-  const month = prompt(
-    '給与再計算の事前確認：対象年月を入力してください',
-    '2026-11'
-  );
-
+  const button = document.getElementById('recalcButton');
+  if (button.disabled) return;
+  const month = prompt('給与再計算：対象年月を入力してください',
+    new Date().toLocaleDateString('sv-SE', {timeZone: 'Asia/Tokyo'}).slice(0, 7));
   if (month === null) return;
-
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
     alert('対象年月は YYYY-MM 形式で入力してください。');
     return;
   }
-
+  const managerToken = sessionStorage.getItem('refarmManagerToken');
+  if (!managerToken) { alert('Lord認証が必要です。'); return; }
+  const args = {loginToken, managerToken, month};
+  button.disabled = true;
+  button.textContent = '事前確認中...';
+  let executing = false;
   try {
-    const response = await callApi('managerPayrollRecalcPrecheck', {
-      loginToken: loginToken,
-      managerToken: sessionStorage.getItem('refarmManagerToken'),
-      month: month
-    });
-
-    const data = response.data || response;
-
-    alert(
-      '【給与再計算・事前確認】\n' +
-      '対象月：' + data.month + '\n' +
-      '給与計算：' + data.calculationCount + '件\n' +
-      '給与明細：' + data.payslipCount + '件\n' +
-      '判定：' + (data.canRecalculate ? '事前確認通過' : '再計算不可') +
-      '\n\n' +
-      (data.errors.length ? data.errors.join('\n') : '検出された問題なし') +
-      '\n\n※給与データは変更していません。'
-    );
+    const data = await callApi('managerPayrollRecalcPrecheck', args);
+    if (!data || data.month !== month || data.previewOnly !== true || !Array.isArray(data.errors)) {
+      throw new Error('事前確認結果が不正です。');
+    }
+    if (data.canRecalculate !== true || data.errors.length) {
+      alert('再計算不可：\n' + data.errors.join('\n')); return;
+    }
+    if (!window.confirm('【給与再計算・事前確認通過】\n対象月：' + month +
+      '\n給与計算：' + data.calculationCount + '件\n給与明細：' + data.payslipCount +
+      '件\n\n未確定給与を再計算しますか？')) return;
+    executing = true;
+    button.textContent = '給与再計算中...';
+    const result = await callApi('managerPayrollRecalcExecute', args);
+    if (!result || result.success !== true || result.month !== month) {
+      throw new Error('再計算結果を確認できません。');
+    }
+    alert(result.message);
+    showPayslipPanel();
+    document.getElementById('payslipMonth').value = month;
+    await loadPayslipList();
   } catch (error) {
-    alert('事前確認エラー：' + error.message);
+    alert((executing ? '再計算の完了を確認できません：' : '事前確認エラー：') + error.message +
+      (executing ? '\n再実行する前に給与データを確認してください。' : ''));
+  } finally {
+    button.disabled = false;
+    button.textContent = '給与計算・再計算';
   }
 }
 
@@ -1392,7 +1401,3 @@ async function savePayDeduction() {
 </body>
 </html>
 ```
-
-
-
-
