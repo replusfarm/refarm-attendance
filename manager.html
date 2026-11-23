@@ -355,7 +355,9 @@
           employeeName + ' さん';
 
       } catch (error) {
-        message.textContent = error.message;
+        message.textContent = error.message === '給与明細PASSが違います'
+  ? 'Majesty code mismatch'
+  : error.message;
       } finally {
         button.disabled = false;
       }
