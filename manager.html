@@ -122,11 +122,10 @@
   <h3>勤怠履歴</h3>
 
   <label for="attendanceEmployee">従業員名</label>
-  <input
-    id="attendanceEmployee"
-    type="text"
-    placeholder="従業員名を入力"
-  >
+  <select id="attendanceEmployee" disabled
+    style="width:100%;padding:15px;font-size:16px;border:1px solid #bbb;border-radius:10px;">
+    <option value="">従業員を読み込み中...</option>
+  </select>
 
   <label for="attendanceDate">対象日</label>
   <input id="attendanceDate" type="date">
@@ -677,20 +676,37 @@ async function loadPayrollPreview() {
     button.disabled = false;
   }
 }
-function showAttendancePanel() {
+async function showAttendancePanel() {
   document.getElementById('managerPanel').style.display = 'none';
   document.getElementById('attendancePanel').style.display = 'block';
-
-  document.getElementById('attendanceEmployee').value =
-    employeeName;
-
+  const select = document.getElementById('attendanceEmployee');
+  const button = document.getElementById('historyButton');
+  const message = document.getElementById('attendanceMessage');
+  select.disabled = true;
+  button.disabled = true;
+  select.replaceChildren(new Option('読み込み中...', ''));
   document.getElementById('attendanceDate').value =
-    new Date().toLocaleDateString('sv-SE', {
-      timeZone: 'Asia/Tokyo'
-    });
-
-  document.getElementById('attendanceMessage').textContent = '';
+    new Date().toLocaleDateString('sv-SE', {timeZone: 'Asia/Tokyo'});
   document.getElementById('attendanceResults').replaceChildren();
+  message.textContent = '従業員一覧を取得中...';
+  try {
+    const managerToken = sessionStorage.getItem('refarmManagerToken');
+    if (!managerToken) throw new Error('Lord認証が必要です。');
+    const data = await callApi('managerAttendanceEmployeeList', {loginToken, managerToken});
+    if (!data || !Array.isArray(data.names) || !data.names.length ||
+        !data.names.every(name => typeof name === 'string' && name.trim())) {
+      throw new Error('従業員一覧を取得できません。');
+    }
+    select.replaceChildren(new Option('従業員を選択してください', ''));
+    for (const name of data.names) select.add(new Option(name, name));
+    select.value = data.names.includes(employeeName) ? employeeName : '';
+    select.disabled = false;
+    button.disabled = false;
+    message.textContent = '';
+  } catch (error) {
+    select.replaceChildren(new Option('取得失敗', ''));
+    message.textContent = '従業員一覧の取得失敗：' + error.message + '\n管理メニューに戻り、再度開いてください。';
+  }
 }
 
 function hideAttendancePanel() {
